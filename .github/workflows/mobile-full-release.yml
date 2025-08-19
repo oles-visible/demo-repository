@@ -10,9 +10,9 @@ on:
         type: boolean
 
 # Only prevent concurrent releases for the same version
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.inputs.version }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.event.inputs.version }}
+#   cancel-in-progress: true
 
 jobs:
   # Step 1: Create tag and build diff with all changes
