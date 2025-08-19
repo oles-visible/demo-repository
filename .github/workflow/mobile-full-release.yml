@@ -1,0 +1,85 @@
+name: Mobile Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (create tag and ticket but skip builds)'
+        required: false
+        default: false
+        type: boolean
+
+# Only prevent concurrent releases for the same version
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.inputs.version }}
+  cancel-in-progress: true
+
+jobs:
+  # Step 1: Create tag and build diff with all changes
+  create-tag-and-diff:
+    runs-on: [self-hosted, release-builds]
+    steps:
+      - name: Validate branch
+        run: |
+          echo "Job is passed"
+
+  # Step 2: Create Linear ticket
+  create-linear-ticket:
+    runs-on: [self-hosted, release-builds]
+    needs: create-tag-and-diff
+    steps:
+      - name: Extract versions from app.config.js
+        id: extract_versions
+        run: |
+          echo "Job is passed"
+
+  # Step 3: Build & Submit Stage and Prod Apps
+  build-and-submit-apps:
+    runs-on: [self-hosted, release-builds]
+    needs: [create-tag-and-diff, create-linear-ticket]
+    if: github.event.inputs.dry_run != 'true'
+
+    steps:
+      - name: Create .env file with required environment variables
+        run: |
+          echo "Job passed"
+
+  # Step 4: Comment in Linear ticket with build versions
+  update-linear-ticket:
+    runs-on: [self-hosted, release-builds]
+    needs: [create-tag-and-diff, create-linear-ticket, build-and-submit-apps]
+    if: |
+      always() &&
+      (needs.build-and-submit-apps.result == 'success' || needs.build-and-submit-apps.result == 'skipped') && 
+      needs.create-tag-and-diff.result == 'success' && needs.create-linear-ticket.result == 'success'
+    steps:
+      - name: Update Linear ticket with build versions
+        run: |
+          echo "Job passed"
+
+  # Step 5: Send Slack notification with all information
+  send-slack-notification:
+    runs-on: [self-hosted, release-builds]
+    needs: [create-tag-and-diff, create-linear-ticket, build-and-submit-apps, update-linear-ticket]
+    steps:
+      - name: Send Slack notification
+        run: echo "Job passed"
+
+  send-dry-run-slack-notification:
+    runs-on: [self-hosted, release-builds]
+    needs: [create-tag-and-diff, create-linear-ticket, update-linear-ticket]
+    if: ${{ github.event.inputs.dry_run == 'true' }}
+    steps:
+      - name: Send Slack notification
+        run: echo "Job passed"
+
+
+  # Final summary job
+  release-summary:
+    runs-on: [self-hosted, release-builds]
+    needs: [create-tag-and-diff, create-linear-ticket, update-linear-ticket, send-slack-notification]
+    if: always()
+    steps:
+      - name: Final Release Summary
+        run: |
+          echo "Job passed"
