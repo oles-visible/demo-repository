@@ -17,7 +17,7 @@ concurrency:
 jobs:
   # Step 1: Create tag and build diff with all changes
   create-tag-and-diff:
-    runs-on: [self-hosted, release-builds]
+    runs-on: ubuntu
     steps:
       - name: Validate branch
         run: |
@@ -25,7 +25,7 @@ jobs:
 
   # Step 2: Create Linear ticket
   create-linear-ticket:
-    runs-on: [self-hosted, release-builds]
+    runs-on: ubuntu
     needs: create-tag-and-diff
     steps:
       - name: Extract versions from app.config.js
@@ -35,7 +35,7 @@ jobs:
 
   # Step 3: Build & Submit Stage and Prod Apps
   build-and-submit-apps:
-    runs-on: [self-hosted, release-builds]
+    runs-on: ubuntu
     needs: [create-tag-and-diff, create-linear-ticket]
     if: github.event.inputs.dry_run != 'true'
 
@@ -46,7 +46,7 @@ jobs:
 
   # Step 4: Comment in Linear ticket with build versions
   update-linear-ticket:
-    runs-on: [self-hosted, release-builds]
+    runs-on: ubuntu
     needs: [create-tag-and-diff, create-linear-ticket, build-and-submit-apps]
     if: |
       always() &&
@@ -59,14 +59,14 @@ jobs:
 
   # Step 5: Send Slack notification with all information
   send-slack-notification:
-    runs-on: [self-hosted, release-builds]
+    runs-on: ubuntu
     needs: [create-tag-and-diff, create-linear-ticket, build-and-submit-apps, update-linear-ticket]
     steps:
       - name: Send Slack notification
         run: echo "Job passed"
 
   send-dry-run-slack-notification:
-    runs-on: [self-hosted, release-builds]
+    runs-on: ubuntu
     needs: [create-tag-and-diff, create-linear-ticket, update-linear-ticket]
     if: ${{ github.event.inputs.dry_run == 'true' }}
     steps:
@@ -76,7 +76,7 @@ jobs:
 
   # Final summary job
   release-summary:
-    runs-on: [self-hosted, release-builds]
+    runs-on: ubuntu
     needs: [create-tag-and-diff, create-linear-ticket, update-linear-ticket, send-slack-notification]
     if: always()
     steps:
